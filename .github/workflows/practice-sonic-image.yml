@@ -25,7 +25,7 @@ jobs:
       SOURCE_REF: ${{ inputs.source_ref }}
       SONIC_CI_ROOT: ${{ vars.SONIC_CI_ROOT }}
       SONIC_SEED_ROOT: ${{ vars.SONIC_SEED_ROOT }}
-      CI_OUTPUT_DIR: ${{ runner.temp }}/sonic-practice-${{ github.run_id }}
+      CI_OUTPUT_DIR: ${{ github.workspace }}/practice-output
     steps:
       - name: Check out build automation
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
