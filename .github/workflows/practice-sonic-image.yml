@@ -1,0 +1,56 @@
+name: Practice SONiC image build
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Practice branch to build
+        required: true
+        default: prathyusha/practice-bgp-startup-log
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: practice-sonic-image
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'prathyusha-micas/sonic-buildimage' && github.actor == github.repository_owner && github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, Linux, X64, sonic-practice]
+    timeout-minutes: 720
+    env:
+      SOURCE_REF: ${{ inputs.source_ref }}
+      SONIC_CI_ROOT: ${{ vars.SONIC_CI_ROOT }}
+      SONIC_SEED_ROOT: ${{ vars.SONIC_SEED_ROOT }}
+      CI_OUTPUT_DIR: ${{ runner.temp }}/sonic-practice-${{ github.run_id }}
+    steps:
+      - name: Check out build automation
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: master
+          persist-credentials: false
+      - name: Build patched Broadcom image
+        shell: bash
+        run: bash scripts/practice-ci/build-image.sh
+      - name: Upload installer and checksum
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: sonic-broadcom-practice-${{ github.run_id }}
+          path: |
+            ${{ env.CI_OUTPUT_DIR }}/sonic-broadcom.bin
+            ${{ env.CI_OUTPUT_DIR }}/SHA256SUMS
+            ${{ env.CI_OUTPUT_DIR }}/build-manifest.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: sonic-build-logs-${{ github.run_id }}
+          path: ${{ env.CI_OUTPUT_DIR }}/*.log
+          if-no-files-found: warn
+          retention-days: 7
